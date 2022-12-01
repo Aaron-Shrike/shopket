@@ -1,14 +1,25 @@
 import Vue from 'vue'
 import VueRouter from 'vue-router'
-import HomeView from '../views/HomeView.vue'
+import store from '../store'
+
+import HomeView from '../modules/HomeView.vue'
+import { AccesoRoutes } from '@/modules/acceso/routes.js'
+import { SistemaRoutes } from '@/modules/sistema/routes.js'
 
 Vue.use(VueRouter)
 
 const routes = [
   {
     path: '/',
-    name: 'home',
+    redirect: {name: 'IniciarSesion'}
+  },
+  ...AccesoRoutes,
+  ...SistemaRoutes,
+  { 
+    path: '/:catchAll(.*)', 
+    name: 'Error',
     component: HomeView
+    // redirect: {name: 'ErrorSistema'},
   },
   {
     path: '/about',
@@ -16,7 +27,7 @@ const routes = [
     // route level code-splitting
     // this generates a separate chunk (about.[hash].js) for this route
     // which is lazy-loaded when the route is visited.
-    component: () => import(/* webpackChunkName: "about" */ '../views/AboutView.vue')
+    component: () => import(/* webpackChunkName: "about" */ '../modules/AboutView.vue')
   }
 ]
 
@@ -25,5 +36,23 @@ const router = new VueRouter({
   base: process.env.BASE_URL,
   routes
 })
+
+router.beforeEach((to, from, next) => {
+  if (to.matched.some(record => record.meta.requiereAutenticacion)) 
+  {
+    if (store.state.acceso.autenticado) 
+    {
+      next();
+    } 
+    else 
+    {
+      next({ name: "IniciarSesion" });
+    }
+  } 
+  else 
+  {
+    next();
+  }
+});
 
 export default router
